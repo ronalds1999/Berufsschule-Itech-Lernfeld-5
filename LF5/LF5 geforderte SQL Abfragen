@@ -1,0 +1,123 @@
+#1 Ein Rezept nach Namen aussuchen
+
+SELECT rezept.ID, rezept.name AS Rezept, rezept.zubereitungsdauer_min, rezept.beschreibung
+FROM rezept
+WHERE rezept.name = 'Tomaten-Quiche';
+
+#2 Rezepte nach einer bestimmten Ernährungskategorie filtern
+
+SELECT rezept.ID AS Nr, rezept.name AS Rezept, ek.name AS Kategorie
+FROM rezeptek
+INNER JOIN rezept
+	ON rezept.ID = rezeptek.rezept_ID
+INNER JOIN ek 
+	ON ek.ID = rezeptek.ek_ID
+WHERE ek.name = 'Vegan'; 
+
+#3 Ein Rezept nach einer bestimmten Allergie/Einschraenkung filtern
+
+SELECT Distinct rezept.ID AS Nr, rezept.name AS Rezept, besch_allerg.Bezeichnung AS Kategorie
+FROM zutatrezept
+INNER JOIN zutat
+	ON zutat.ID = zutatrezept.zutat_ID
+INNER JOIN rezept
+	ON rezept.ID = zutatrezept.rezept_ID
+INNER JOIN besch_allerg
+	ON besch_allerg.ID = zutat.besch_allerg_ID
+WHERE besch_allerg.Bezeichnung = 'problemlos'; 
+
+#4 Rezepte anzeigen, die einer bestimmte Zutat enthalten 
+
+SELECT rezept.ID, rezept.name
+FROM zutatrezept
+INNER JOIN rezept 
+	ON rezept.ID = zutatrezept.rezept_ID
+INNER JOIN zutat
+	ON zutat.ID = zutatrezept.zutat_ID
+WHERE zutat.BEZEICHNUNG = 'Vollkornweizenmehl';
+
+#5 Alle Zutaten eines Rezeptes anzeigen lassen
+
+SELECT rezept.name AS Rezept, zutat.BEZEICHNUNG AS Zutat 
+FROM zutatrezept
+INNER JOIN zutat 
+	ON zutat.ID = zutatrezept.zutat_ID
+INNER JOIN rezept 
+	ON rezept.ID = zutatrezept.rezept_ID
+INNER JOIN rezeptek
+	ON rezeptek.rezept_ID = rezept.ID
+WHERE rezept.name = 'Tomaten-Quiche';
+
+#6 Rezepte mit weniger als 5 Zutaten anzeigen lassen 
+
+SELECT rezept.name AS Rezept, zutatrezept.rezept_ID AS ID, Count(rezept.ID) AS Zutaten
+FROM zutatrezept
+INNER JOIN rezept
+	ON rezept.ID = zutatrezept.rezept_ID
+GROUP BY rezept.ID
+HAVING Zutaten < 5;
+
+#7 Rezepte mit weniger als 5 Zutaten und einer bestimmten Ernährungskategorie anzeigen lassen
+
+SELECT ek.name AS Kategorie, rezept.name AS Rezept, zutatrezept.rezept_ID AS ID, COUNT(rezept.ID) AS Zutaten
+FROM zutatrezept
+INNER JOIN rezept
+	ON rezept.ID = zutatrezept.rezept_ID
+INNER JOIN rezeptek
+	ON rezeptek.rezept_ID = rezept.ID
+INNER JOIN ek
+	ON ek.ID = rezeptek.ek_ID
+WHERE ek.ID = 1
+GROUP BY rezept.ID	
+HAVING zutaten < 5	
+;
+
+#8 Auswahl aller Rezepte, die eine bestimmte Kalorienmenge nicht überschreiten 
+
+SELECT rezept.name, rezept.beschreibung, rezept.Gesamtkalorien
+FROM rezept
+WHERE Gesamtkalorien <2800;
+
+#9 Auflistung aller Zutaten die in noch keinem Rezept sind
+
+SELECT zutat.ID, zutat.BEZEICHNUNG
+FROM zutat
+WHERE NOT EXISTS
+	(SELECT zutat.ID FROM zutatrezept
+	WHERE zutatrezept.zutat_ID = zutat.ID);
+
+#10 Alle Kunden die schon mal bestellt haben + datum der letzten Bestellung
+
+SELECT DISTINCT bestellung.BESTELLNR, kunde.VORNAME, kunde.NACHNAME
+FROM bestellung 
+RIGHT JOIN kunde
+	ON kunde.KUNDENNR = bestellung.KUNDENNR;
+
+#11 Durschnittlicher Rechnungsbetrag aller bestellungen in einem bestimmten Zeitraum
+
+SELECT AVG(bestellung.RECHNUNGSBETRAG) AS Durschnittlicher_Rechnungsbetrag_August
+FROM bestellung
+WHERE bestellung.BESTELLDATUM BETWEEN '2020-08-01' AND '2020-08-13'; 
+
+#12 Durschnittliche Nährwerte aller bestellungen eines Kunden
+
+SELECT bestellung.KUNDENNR, kunde.VORNAME AS Vorname, kunde.NACHNAME AS Nachname, 
+AVG(bestellungzutat.MENGE * zutat.KALORIEN) AS durschnitt_Kalorien,
+AVG(bestellungzutat.MENGE * zutat.KOHLENHYDRATE) AS durschnitt_Kohlenhydrahte, 
+AVG(bestellungzutat.MENGE * zutat.PROTEIN) AS durschnitt_Protein
+FROM bestellung
+INNER JOIN kunde
+	ON kunde.KUNDENNR = bestellung.KUNDENNR
+INNER JOIN bestellungzutat
+	ON bestellungzutat.BESTELLNR = bestellung.BESTELLNR
+INNER JOIN zutat
+	ON zutat.ID = bestellungzutat.zutat_ID
+WHERE bestellung.KUNDENNR = 2003;
+
+#13 Auflistung aller Zutaten die von einem bestimmten Lieferanten geliefert wurden 
+
+SELECT zutat.ID, zutat.BEZEICHNUNG, lieferant.LIEFERANTENNAME
+FROM zutat
+INNER JOIN lieferant
+	ON lieferant.LIEFERANTENNR = zutat.LIEFERANTENNR
+WHERE lieferant.LIEFERANTENNR = 101;
